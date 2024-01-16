@@ -122,12 +122,33 @@ class WaterMark extends Module
                     }
         
                     $targetFile = $targetDir.basename($_FILES["UPLOAD_IMAGE"]["name"]);
+            
+                    // cas n° 1 
+                    $_FILES["UPLOAD_IMAGE"]["name"]; // compare avec la variable de configuration de l'image
+                    // si la variable de Files est vide alors la variable Files est égale à La variable de configuration.
+
+                    $_FILES["UPLOAD_IMAGE"]["name"] = // la variable de Configuration
+
+                    // cas numero 2
+                    // si l'image uplodé est la même que celle dans la bdd 
+                    // il ne faut pas modifié la configuration
+
+                    $_FILES["UPLOAD_IMAGE"]["name"] = // la variable configuration
+
+                    //cas numero 3
+                    // lors de l'uplod d'une nouvelle image supprimer l'ancienne
+
+                    // unlink supprime les fichiers serveurs 
+                    // on le récupere dans le nom de l'image via la variable de configuration
+
+
         
                     $imageFileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
         
                     if($imageFileType == 'png' || $imageFileType == 'jpg')
                     {
                         move_uploaded_file($_FILES["UPLOAD_IMAGE"]["tmp_name"], $targetFile);
+
                     }
                     else
                     {
@@ -264,5 +285,24 @@ class WaterMark extends Module
         $helper->fields_value['PRODUCTS_IMAGES'] = Configuration::get('PRODUCTS_IMAGES');
 
         return $helper->generateForm($field_form);
+    }
+
+    public function hookDisplayHeader()
+    {
+        $link = new Link();
+        $imagePath = $link->getBaseLink().'/modules/'.$this->name.'/views/img/'.Configuration::get('UPLOAD_IMAGE');
+        
+        if(Configuration::get('ACTIVE_OPTION') == 1)
+        {
+
+            $this->smarty->assign(array(
+                'img' => $imagePath,
+                'img_size' => Configuration::get('IMAGE_SIZE'),
+                'img_opacity' => Configuration::get('OPACITY_IMAGE'),
+                'img_repeat' => Configuration::get('REPEAT_IMAGE')
+            ));
+
+            return $this->display(__FILE__,'/views/templates/hook/displayHeader.tpl');
+        }
     }
 }
