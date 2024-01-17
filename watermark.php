@@ -56,11 +56,14 @@ class WaterMark extends Module
         if (!parent::install() ||
         !Configuration::updateValue('ACTIVE_OPTION', 0) ||
         !Configuration::updateValue('UPLOAD_IMAGE', '') ||
+        !Configuration::updateValue('CURRENT_IMAGE', '') ||
         !Configuration::updateValue('OPACITY_IMAGE', 0) ||
         !Configuration::updateValue('REPEAT_IMAGE', 0) ||
         !Configuration::updateValue('IMAGE_SIZE', 100) ||
         !Configuration::updateValue('CATEGORIE_IMAGES', 0) ||
-        !Configuration::updateValue('PRODUCTS_IMAGES', 0) 
+        !Configuration::updateValue('PRODUCTS_IMAGES', 0) ||
+        !Configuration::updateValue('HOME_IMAGES', 0) ||
+        !$this->registerHook('DisplayHeader')
         ) {
             return false;
         }
@@ -72,11 +75,14 @@ class WaterMark extends Module
         if (!parent::uninstall() ||
         !Configuration::deleteByName('ACTIVE_OPTION') ||
         !Configuration::deleteByName('UPLOAD_IMAGE') ||
+        !Configuration::deleteByName('CURRENT_IMAGE') ||
         !Configuration::deleteByName('OPACITY_IMAGE') ||
         !Configuration::deleteByName('REPEAT_IMAGE') ||
         !Configuration::deleteByName('IMAGE_SIZE') ||
         !Configuration::deleteByName('CATEGORIE_IMAGES') ||
-        !Configuration::deleteByName('PRODUCTS_IMAGES')
+        !Configuration::deleteByName('PRODUCTS_IMAGES') ||
+        !Configuration::deleteByName('HOME_IMAGES') ||
+        !$this->unregisterHook('DisplayHeader')
         ) {
             return false;
         }
@@ -85,6 +91,7 @@ class WaterMark extends Module
 
     public function getContent()
     {
+
         return $this->postProcess().$this->renderForm();
     }
 
@@ -94,8 +101,8 @@ class WaterMark extends Module
         {
             if(Validate::isBool(Tools::getValue('ACTIVE_OPTION')) && Validate::isBool(Tools::getValue('REPEAT_IMAGE')) 
             && Validate::isBool(Tools::getValue('CATEGORIE_IMAGES')) && Validate::isBool(Tools::getValue('PRODUCTS_IMAGES')) 
-            && Validate::isFileName(Tools::getValue('UPLOAD_IMAGE')) && Validate::isInt(Tools::getValue('IMAGE_SIZE'))
-            && Validate::isInt(Tools::getValue('OPACITY_IMAGE')) || Validate::isFloat(Tools::getValue('OPACITY_IMAGE'))
+            && Validate::isBool(Tools::getValue('HOME_IMAGES')) &&Validate::isFileName(Tools::getValue('UPLOAD_IMAGE')) 
+            && Validate::isInt(Tools::getValue('IMAGE_SIZE')) && Validate::isInt(Tools::getValue('OPACITY_IMAGE')) || Validate::isFloat(Tools::getValue('OPACITY_IMAGE'))
             )
             {
                 //Switch
@@ -103,65 +110,71 @@ class WaterMark extends Module
                 Configuration::updateValue('REPEAT_IMAGE',Tools::getValue('REPEAT_IMAGE'));
                 Configuration::updateValue('CATEGORIE_IMAGES',Tools::getValue('CATEGORIE_IMAGES'));
                 Configuration::updateValue('PRODUCTS_IMAGES',Tools::getValue('PRODUCTS_IMAGES'));
+                Configuration::updateValue('HOME_IMAGES',Tools::getValue('HOME_IMAGES'));
 
                 //text
                 Configuration::updateValue('OPACITY_IMAGE',Tools::getValue('OPACITY_IMAGE'));
                 Configuration::updateValue('IMAGE_SIZE',Tools::getValue('IMAGE_SIZE'));
 
                 //Image file
+                Configuration::updateValue('CURRENT_IMAGE',Configuration::get('UPLOAD_IMAGE'));
                 
-                Configuration::updateValue('UPLOAD_IMAGE',Tools::getValue('UPLOAD_IMAGE'));
+                $uploadImage = $_FILES['UPLOAD_IMAGE'];
                 
-                if($_FILES["UPLOAD_IMAGE"]["error"] == UPLOAD_ERR_OK)
+                if($uploadImage["error"] == UPLOAD_ERR_OK)
                 {
                     $targetDir = _PS_MODULE_DIR_.$this->name.'/views/img/';
-        
+                    
                     if(!file_exists($targetDir))
                     {
                         mkdir($targetDir,0755, true);
                     }
-        
-                    $targetFile = $targetDir.basename($_FILES["UPLOAD_IMAGE"]["name"]);
-            
+                    
+                    $targetFile = $targetDir.basename($uploadImage["name"]);
+                    
                     // cas n° 1 
-                    $_FILES["UPLOAD_IMAGE"]["name"]; // compare avec la variable de configuration de l'image
                     // si la variable de Files est vide alors la variable Files est égale à La variable de configuration.
-
-                    $_FILES["UPLOAD_IMAGE"]["name"] = // la variable de Configuration
-
+                    if(empty($uploadImage["name"]))
+                    {
+                        $uploadImage["name"] == Configuration::get('UPLOAD_IMAGE');
+                    }
                     // cas numero 2
                     // si l'image uplodé est la même que celle dans la bdd 
-                    // il ne faut pas modifié la configuration
-
-                    $_FILES["UPLOAD_IMAGE"]["name"] = // la variable configuration
-
-                    //cas numero 3
-                    // lors de l'uplod d'une nouvelle image supprimer l'ancienne
-
-                    // unlink supprime les fichiers serveurs 
-                    // on le récupere dans le nom de l'image via la variable de configuration
-
-
-        
-                    $imageFileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
-        
-                    if($imageFileType == 'png' || $imageFileType == 'jpg')
-                    {
-                        move_uploaded_file($_FILES["UPLOAD_IMAGE"]["tmp_name"], $targetFile);
-
+                    if ($uploadImage["name"] == Configuration::get('UPLOAD_IMAGE')) {
+                        
                     }
                     else
                     {
-                        return $this->displayError($this->l('Only PNG and JPG files are allowed'));
+                        $oldImagePath = $targetDir . Configuration::get('UPLOAD_IMAGE');
+                        if (file_exists($oldImagePath)) {
+                            unlink($oldImagePath);
+                        }
+                        else
+                        {
+                            move_uploaded_file($uploadImage["tmp_name"], $targetFile);
+                        }
+    
+                        // Déplacer la nouvelle image vers le répertoire
+                        move_uploaded_file($uploadImage["tmp_name"], $targetFile);
+    
+                        // Mettre à jour la configuration avec le nouveau nom d'image
+                        Configuration::updateValue('UPLOAD_IMAGE', $uploadImage["name"]);
                     }
-        
+                    
+                    return $this->displayConfirmation('Well recorded!');
                 }
                 else
                 {
-                    return $this->displayError($this->l('Error during the file upload'));
+                    if(empty(Tools::getValue('CURRENT_IMAGE')))
+                    {
+                        return $this->displayError($this->l('Please choose an image file.'));
+                    }
+
+                    Configuration::updateValue('UPLOAD_IMAGE', Tools::getValue('CURRENT_IMAGE'));
+                    return $this->displayConfirmation('Well recorded!');
                 }
+        
                 
-                return $this->displayConfirmation('Well recorded!');
             }
             
         }
@@ -169,6 +182,20 @@ class WaterMark extends Module
 
     public function renderForm()
     {
+        $options = array(
+            array('id'=>0.1, 'name' => '10%'),
+            array('id'=>'0.2', 'name' => '20%'),
+            array('id'=>'0.3', 'name' => '30%'),
+            array('id'=>'0.4', 'name' => '40%'),
+            array('id'=>'0.5', 'name' => '50%'),
+            array('id'=>'0.6', 'name' => '60%'),
+            array('id'=>'0.7', 'name' => '70%'),
+            array('id'=>'0.8', 'name' => '80%'),
+            array('id'=>'0.9', 'name' => '90%'),
+            array('id'=>'1', 'name' => '100%'),
+        );
+
+
         $field_form[0]['form'] = [
             'legend' => [
                 'title' => $this->l('Settings'),
@@ -196,12 +223,22 @@ class WaterMark extends Module
                     'type' => 'file',
                         'label' => $this->l('Url image'),
                         'name' => 'UPLOAD_IMAGE',
+                        'display_image' => true,
                 ],
                 [
-                    'type' => 'text',
-                        'label' => $this->l('Choose opacity'),
-                        'name' => 'OPACITY_IMAGE',
-                        'descr' => $this->l('The value must be between 0 and 1')
+                    'type' => 'hidden',
+                    'name' => 'CURRENT_IMAGE',
+                    'value' => Configuration::get('UPLOAD_IMAGE')
+                ],
+                [
+                    'type' => 'select',
+                    'label' => $this->l('Choose opacity'),
+                    'name' => 'OPACITY_IMAGE',
+                    'options' => array(
+                        'query' => $options,
+                        'id' => 'id',
+                        'name' => 'name'
+                    ),
                 ],
                 [
                     'type' => 'text',
@@ -262,6 +299,25 @@ class WaterMark extends Module
                             )
                         )
                 ],
+                [
+                    'type' => 'switch',
+                        'label' => $this->l('Display on categorie product ?'),
+                        'name' => 'HOME_IMAGES',
+                        'is_bool' => true,
+                        'values' => array(
+                            array(
+                                'id' => 'label2_on',
+                                'value' => 1,
+                                'label' => $this->l('Yes')
+                            ),
+                            array(
+                                'id' => 'label2_off',
+                                'value' => 0,
+                                'label' => $this->l('No')
+                            )
+                        )
+                ],
+                
             ],
             'submit' => [
                 'title' => $this->l('save'),
@@ -278,11 +334,13 @@ class WaterMark extends Module
 
         $helper->fields_value['ACTIVE_OPTION'] = Configuration::get('ACTIVE_OPTION');
         $helper->fields_value['UPLOAD_IMAGE'] = Configuration::get('UPLOAD_IMAGE');
+        $helper->fields_value['CURRENT_IMAGE'] = Configuration::get('CURRENT_IMAGE');
         $helper->fields_value['OPACITY_IMAGE'] = Configuration::get('OPACITY_IMAGE');
         $helper->fields_value['REPEAT_IMAGE'] = Configuration::get('REPEAT_IMAGE');
         $helper->fields_value['IMAGE_SIZE'] = Configuration::get('IMAGE_SIZE');
         $helper->fields_value['CATEGORIE_IMAGES'] = Configuration::get('CATEGORIE_IMAGES');
         $helper->fields_value['PRODUCTS_IMAGES'] = Configuration::get('PRODUCTS_IMAGES');
+        $helper->fields_value['HOME_IMAGES'] = Configuration::get('HOME_IMAGES');
 
         return $helper->generateForm($field_form);
     }
@@ -291,18 +349,25 @@ class WaterMark extends Module
     {
         $link = new Link();
         $imagePath = $link->getBaseLink().'/modules/'.$this->name.'/views/img/'.Configuration::get('UPLOAD_IMAGE');
-        
+        $controller = $this->context->controller->php_self;
+
         if(Configuration::get('ACTIVE_OPTION') == 1)
         {
+            if (
+                (Configuration::get('CATEGORIE_IMAGES') == 1 && $controller == 'category') ||
+                (Configuration::get('PRODUCTS_IMAGES') == 1 && $controller == 'product') ||
+                (Configuration::get('HOME_IMAGES') == 1 && $controller == 'index')
+            ) {
+                $this->smarty->assign(array(
+                    'img' => $imagePath,
+                    'img_size' => Configuration::get('IMAGE_SIZE'),
+                    'img_opacity' => Configuration::get('OPACITY_IMAGE'),
+                    'img_repeat' => Configuration::get('REPEAT_IMAGE')
+                ));
 
-            $this->smarty->assign(array(
-                'img' => $imagePath,
-                'img_size' => Configuration::get('IMAGE_SIZE'),
-                'img_opacity' => Configuration::get('OPACITY_IMAGE'),
-                'img_repeat' => Configuration::get('REPEAT_IMAGE')
-            ));
+                return $this->display(__FILE__, '/views/templates/hook/displayHeader.tpl');
+            }
 
-            return $this->display(__FILE__,'/views/templates/hook/displayHeader.tpl');
         }
     }
 }
