@@ -170,7 +170,7 @@ class WaterMark extends Module
                         return $this->displayError($this->l('Please choose an image file.'));
                     }
 
-                    Configuration::updateValue('UPLOAD_IMAGE', Tools::getValue('CURRENT_IMAGE'));
+                    Configuration::updateValue('UPLOAD_IMAGE', Configuration::get('CURRENT_IMAGE'));
                     return $this->displayConfirmation('Well recorded!');
                 }
         
@@ -301,7 +301,7 @@ class WaterMark extends Module
                 ],
                 [
                     'type' => 'switch',
-                        'label' => $this->l('Display on categorie product ?'),
+                        'label' => $this->l('Display on home page products ?'),
                         'name' => 'HOME_IMAGES',
                         'is_bool' => true,
                         'values' => array(
@@ -360,7 +360,7 @@ class WaterMark extends Module
             ) {
                 $this->smarty->assign(array(
                     'img' => $imagePath,
-                    'img_size' => Configuration::get('IMAGE_SIZE'),
+                    'img_size' => Configuration::get('IMAGE_SIZE').'%',
                     'img_opacity' => Configuration::get('OPACITY_IMAGE'),
                     'img_repeat' => Configuration::get('REPEAT_IMAGE')
                 ));

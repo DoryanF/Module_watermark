@@ -6,8 +6,8 @@
 .thumbnail-top::after{
     content: '';
     background-image: url({$img});
-    width: 100%;
-    height: 100%;
+    width: {$img_size};
+    height: {$img_size};
     position: absolute;
     top: 0;
     left: 0;
@@ -28,8 +28,8 @@
 .product-cover::after{
     content: '';
     background-image: url({$img});
-    width: 100%;
-    height: 100%;
+    width: {$img_size};
+    height: {$img_size};
     position: absolute;
     top: 0;
     left: 0;
@@ -47,4 +47,25 @@
     
     {/if}
 }
+
+@media only screen and (max-width: 767px) {
+    .thumbnail-top::after{
+        top: 40px;
+        left: 40px;
+        width: 80%;
+        height: 80%;
+    }
+    
+}
+
+{if $img_repeat == 1}
+    @media only screen and (max-width: 767px){
+        .thumbnail-top::after{
+            top: 0;
+            left: 0;
+            width: {$img_size};
+            height: {$img_size};
+        }
+    }
+{/if}
 </style>
