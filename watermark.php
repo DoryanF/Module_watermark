@@ -59,7 +59,6 @@ class WaterMark extends Module
         !Configuration::updateValue('CURRENT_IMAGE', '') ||
         !Configuration::updateValue('OPACITY_IMAGE', 0) ||
         !Configuration::updateValue('REPEAT_IMAGE', 0) ||
-        !Configuration::updateValue('IMAGE_SIZE', 100) ||
         !Configuration::updateValue('CATEGORIE_IMAGES', 0) ||
         !Configuration::updateValue('PRODUCTS_IMAGES', 0) ||
         !Configuration::updateValue('HOME_IMAGES', 0) ||
@@ -78,7 +77,6 @@ class WaterMark extends Module
         !Configuration::deleteByName('CURRENT_IMAGE') ||
         !Configuration::deleteByName('OPACITY_IMAGE') ||
         !Configuration::deleteByName('REPEAT_IMAGE') ||
-        !Configuration::deleteByName('IMAGE_SIZE') ||
         !Configuration::deleteByName('CATEGORIE_IMAGES') ||
         !Configuration::deleteByName('PRODUCTS_IMAGES') ||
         !Configuration::deleteByName('HOME_IMAGES') ||
@@ -86,9 +84,9 @@ class WaterMark extends Module
         ) {
             return false;
         }
-            return true;
+        return true;
     }
-
+    
     public function getContent()
     {
 
@@ -102,7 +100,7 @@ class WaterMark extends Module
             if(Validate::isBool(Tools::getValue('ACTIVE_OPTION')) && Validate::isBool(Tools::getValue('REPEAT_IMAGE')) 
             && Validate::isBool(Tools::getValue('CATEGORIE_IMAGES')) && Validate::isBool(Tools::getValue('PRODUCTS_IMAGES')) 
             && Validate::isBool(Tools::getValue('HOME_IMAGES')) &&Validate::isFileName(Tools::getValue('UPLOAD_IMAGE')) 
-            && Validate::isInt(Tools::getValue('IMAGE_SIZE')) && Validate::isInt(Tools::getValue('OPACITY_IMAGE')) || Validate::isFloat(Tools::getValue('OPACITY_IMAGE'))
+            && Validate::isInt(Tools::getValue('OPACITY_IMAGE')) || Validate::isFloat(Tools::getValue('OPACITY_IMAGE'))
             )
             {
                 //Switch
@@ -114,7 +112,7 @@ class WaterMark extends Module
 
                 //text
                 Configuration::updateValue('OPACITY_IMAGE',Tools::getValue('OPACITY_IMAGE'));
-                Configuration::updateValue('IMAGE_SIZE',Tools::getValue('IMAGE_SIZE'));
+                
 
                 //Image file
                 Configuration::updateValue('CURRENT_IMAGE',Configuration::get('UPLOAD_IMAGE'));
@@ -241,11 +239,6 @@ class WaterMark extends Module
                     ),
                 ],
                 [
-                    'type' => 'text',
-                        'label' => $this->l('Image size'),
-                        'name' => 'IMAGE_SIZE',
-                ],
-                [
                     'type' => 'switch',
                         'label' => $this->l('Repeat watermark ?'),
                         'name' => 'REPEAT_IMAGE',
@@ -337,7 +330,6 @@ class WaterMark extends Module
         $helper->fields_value['CURRENT_IMAGE'] = Configuration::get('CURRENT_IMAGE');
         $helper->fields_value['OPACITY_IMAGE'] = Configuration::get('OPACITY_IMAGE');
         $helper->fields_value['REPEAT_IMAGE'] = Configuration::get('REPEAT_IMAGE');
-        $helper->fields_value['IMAGE_SIZE'] = Configuration::get('IMAGE_SIZE');
         $helper->fields_value['CATEGORIE_IMAGES'] = Configuration::get('CATEGORIE_IMAGES');
         $helper->fields_value['PRODUCTS_IMAGES'] = Configuration::get('PRODUCTS_IMAGES');
         $helper->fields_value['HOME_IMAGES'] = Configuration::get('HOME_IMAGES');

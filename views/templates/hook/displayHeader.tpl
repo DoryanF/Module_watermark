@@ -6,8 +6,8 @@
 .thumbnail-top::after{
     content: '';
     background-image: url({$img});
-    width: {$img_size};
-    height: {$img_size};
+    width: 100%;
+    height: 100%;
     position: absolute;
     top: 0;
     left: 0;
@@ -28,8 +28,8 @@
 .product-cover::after{
     content: '';
     background-image: url({$img});
-    width: {$img_size};
-    height: {$img_size};
+    width: 100%;
+    height: 100%;
     position: absolute;
     top: 0;
     left: 0;
@@ -63,9 +63,33 @@
         .thumbnail-top::after{
             top: 0;
             left: 0;
-            width: {$img_size};
-            height: {$img_size};
+            width: 100%;
+            height: 100%;
         }
     }
 {/if}
 </style>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        alert("Clic droit désactivé !");
+    });
+
+
+    document.addEventListener("keydown", function(e) {
+        console.log(e);
+        if(e.key == 'F12')
+        {
+            e.stopPropagation();
+            e.preventDefault();
+            window.event.cancelBubble = true;
+            alert("F12 désactivé !")
+        }
+    });
+
+});
+</script>
